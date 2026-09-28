@@ -1,25 +1,39 @@
+# TODO: Import the cv2, numpy, and time packages from the Python package library
+# ---
 import cv2
 import numpy as np
 import time
+# ---
+
+# TODO: Import the MyCobot280 package from the pymycobot library
+# ---
 from pymycobot.mycobot280 import MyCobot280
+# ---
 
 # =====================================================================
-# 1. ROBOT INITIALIZATION (Startup Position Only)
+# 1. ROBOT INITIALIZATION
 # =====================================================================
+
 try:
+    # TODO: Initialize the arm, wait, and ensure the arm is on.
+    # ---
     print("Connecting to myCobot280...")
+
     mc = MyCobot280('/dev/ttyAMA0', 1000000)
     time.sleep(0.5)
     mc.power_on()
     time.sleep(0.5)
+    # ---
     
-    # Move to initial folded position (Angles: J1-J6)
-    folded_angles = [0, 45, -90, -45, 0, 0]
-    print("Moving arm to initial folded position...")
-    mc.send_angles(folded_angles, 20)
+    # TODO: Move arm to initial folded position
+    # ---
+    home_pos = [0, 45, -90, -45, 0, 0]
+    mc.send_angles(home_pos, 20)
     time.sleep(2.0)
+
     print("Robot ready.")
-    
+    # ---
+
 except Exception as e:
     print(f"Robot hardware warning: {e}")
     print("Continuing with OpenCV camera pipeline only...\n")
@@ -28,6 +42,7 @@ except Exception as e:
 # =====================================================================
 # 2. OPENCV SHAPE & ARUCO DETECTOR
 # =====================================================================
+
 class VisionPipeline:
     def __init__(self):
         self.x1 = self.x2 = self.y1 = self.y2 = 0
@@ -44,7 +59,7 @@ class VisionPipeline:
             self.use_new_aruco = False
 
     def calculate_aruco_bounds(self, frame):
-        """Detects ArUco markers to establish workspace bounds."""
+        # Detects ArUco markers to establish workspace bounds.
         if frame is None or frame.size == 0:
             return False
 
@@ -99,7 +114,7 @@ class VisionPipeline:
         return resized
 
     def shape_detect(self, img):
-        """Identifies shape type and returns modified frame + threshold debug mask."""
+        # Identifies shape type and returns modified frame + threshold debug mask.
         if img is None or img.size == 0:
             return img, None, "No Frame"
 
@@ -119,34 +134,47 @@ class VisionPipeline:
         status_msg = "Searching..."
 
         for cnt in contours:
+            # TODO: Find how much of the screen the shape covers
+            # ---
             area = cv2.contourArea(cnt)
             # Area gate: must occupy between 2% and 80% of workspace view
             if area < (img_h * img_w * 0.02) or area > (img_h * img_w * 0.80):
                 continue
+            # ---
 
+            # TODO: Find the perimeter of the shape, if available.
+            # ---
             peri = cv2.arcLength(cnt, True)
             if peri == 0:
                 continue
+            # ---
 
+            # TODO: Find the rectangular area of the shape, if available.
+            # ---
             rect = cv2.minAreaRect(cnt)
             (cx, cy), (w, h), angle = rect
             rect_area = w * h
             if rect_area == 0:
                 continue
+            # ---
 
-            # Core Shape Metrics
-            extent = float(area) / rect_area                           # Area / Bounding Box Area
+            # TODO: Calculate the shape metrics
+            # ---
+            extent = float(area) / rect_area                            # Area / Bounding Box Area
             circularity = (4 * np.pi * area) / (peri ** 2)              # Circle = ~1.0, Square = ~0.785
             aspect_ratio = float(min(w, h)) / max(w, h) if max(w, h) > 0 else 0
+            # ---
             
             approx = cv2.approxPolyDP(cnt, 0.04 * peri, True)
             num_vertices = len(approx)
 
+            # TODO: Initialize an object type variable.
+            # ---
             object_type = "Unknown"
+            # ---
 
-            # -------------------------------------------------------------
-            # FIXED DECISION TREE
-            # -------------------------------------------------------------
+            # TODO: Decide the shape that the camera sees.
+            # ---
             # 1. TRIANGLE: Fills ~50% of bounding box
             if extent < 0.65 or num_vertices == 3:
                 object_type = "Triangle"
@@ -162,6 +190,7 @@ class VisionPipeline:
             # 4. RECTANGLE: Fills high bounding box area but unequal side lengths
             else:
                 object_type = "Rectangle"
+            # ---
 
             # Draw bounding box and label
             box = np.int32(cv2.boxPoints(rect))
@@ -176,7 +205,7 @@ class VisionPipeline:
 
 
 def find_working_camera(max_tests=5):
-    """Scans video indices and returns the first camera that produces frames."""
+    # Scans video indices and returns the first camera that produces frames.
     for idx in range(max_tests):
         cap = cv2.VideoCapture(idx, cv2.CAP_V4L2)
         if cap.isOpened():
@@ -190,7 +219,10 @@ def find_working_camera(max_tests=5):
 # =====================================================================
 # 3. MAIN CAMERA LOOP
 # =====================================================================
+
 def main():
+    # TODO: Find the working camera index.
+    # ---
     cap_num = find_working_camera()
     if cap_num is None:
         print("Error: No working camera stream found.")
@@ -200,6 +232,7 @@ def main():
 
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    # ---
 
     if not cap.isOpened():
         print("Error: Could not open camera.")
