@@ -38,8 +38,13 @@ except Exception as e:
 # ==========================================
 # 1. INSPECTION CRITERIA CONFIGURATION
 # ==========================================
-# ROI Coordinates [y_min, y_max, x_min, x_max] on 640x480 frame
-ROI_BOUNDS = [120, 360, 200, 440]
+# ROI Scale and Offset (adjust these to change ROI position/size)
+ROI_SCALE = 0.95      # 1.0 = original size, 0.5 = half size, 2.0 = double size
+ROI_OFFSET_X = -15     # Horizontal offset (pixels), positive = right
+ROI_OFFSET_Y = -70     # Vertical offset (pixels), positive = down
+
+# Base ROI Coordinates [y_min, y_max, x_min, x_max] on 640x480 frame
+BASE_ROI = [120, 360, 200, 440]
 
 # Acceptable tolerances for passing items
 MIN_AREA = 2000       # Minimum contour area (pixels)
@@ -97,6 +102,24 @@ cap = cv2.VideoCapture(0)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
+# Calculate ROI bounds with scale and offset
+def calculate_roi_bounds():
+    y1, y2, x1, x2 = BASE_ROI
+    center_x = (x1 + x2) // 2
+    center_y = (y1 + y2) // 2
+    width = (x2 - x1) * ROI_SCALE
+    height = (y2 - y1) * ROI_SCALE
+    new_x1 = int(center_x - width // 2 + ROI_OFFSET_X)
+    new_x2 = int(center_x + width // 2 + ROI_OFFSET_X)
+    new_y1 = int(center_y - height // 2 + ROI_OFFSET_Y)
+    new_y2 = int(center_y + height // 2 + ROI_OFFSET_Y)
+    # Clamp to frame bounds
+    new_x1 = max(0, min(new_x1, 640))
+    new_x2 = max(0, min(new_x2, 640))
+    new_y1 = max(0, min(new_y1, 480))
+    new_y2 = max(0, min(new_y2, 480))
+    return [new_y1, new_y2, new_x1, new_x2]
+
 print("Starting Quality Control Scanner. Press 'q' to quit.")
 
 try:
@@ -105,6 +128,7 @@ try:
         if not ret:
             break
 
+        ROI_BOUNDS = calculate_roi_bounds()
         y1, y2, x1, x2 = ROI_BOUNDS
         roi = frame[y1:y2, x1:x2]
 
@@ -118,9 +142,10 @@ try:
         cv2.rectangle(frame, (x1, y1), (x2, y2), status_color, 2)
         cv2.putText(frame, "INSPECTION ZONE", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, status_color, 2)
 
-        # Display Telemetry Banner
-        cv2.putText(frame, f"STATUS: {status}", (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1.0, status_color, 3)
-        cv2.putText(frame, f"REASON: {reason}", (20, 75), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+        # Display Telemetry at Bottom Left
+        h, w = frame.shape[:2]
+        cv2.putText(frame, f"STATUS: {status}", (20, h - 50), cv2.FONT_HERSHEY_SIMPLEX, 1.0, status_color, 3)
+        cv2.putText(frame, f"REASON: {reason}", (20, h - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
         # Show frames
         cv2.imshow("Mission 02 - Project 05: QC Scanner", frame)

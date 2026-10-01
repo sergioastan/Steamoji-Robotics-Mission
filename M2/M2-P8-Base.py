@@ -6,13 +6,13 @@ from pymycobot.mycobot import MyCobot
 # ==========================================
 # 1. HARDWARE & COORDINATE CONFIGURATION
 # ==========================================
-mc = MyCobot('/dev/ttyAMA0', 115200)
+mc = MyCobot('/dev/ttyAMA0', 1000000)
 time.sleep(0.5)
 
 ARM_SPEED = 40
 
 # Rest/Home Position for Camera Scan
-POS_HOME = [180, 0, 220, -180, 0, 0]
+POS_HOME = [66, -62, 235, 180, 0, 90]
 
 # Supply Rack where 'O' tokens are waiting to be picked
 POS_TOKEN_SUPPLY = [120, -180, 110, -180, 0, 0]
@@ -42,9 +42,28 @@ for (r, c), (x, y) in _BASE_CELL_COORDS.items():
 
 Z_PLACE_HEIGHT = 110
 
-# Vision bounds
-GRID_X_MIN, GRID_X_MAX = 170, 470
-GRID_Y_MIN, GRID_Y_MAX = 90, 390
+# ==========================================
+# VISION CALIBRATION SETTINGS (match M2-P7-Base.py)
+# ==========================================
+GRID_SCALE = 0.75       # Scale factor for grid size (1.0 = original)
+GRID_OFFSET_X = -10     # Horizontal offset in pixels (+X = right)
+GRID_OFFSET_Y = -70     # Vertical offset in pixels (+Y = down)
+
+# Base pixel coordinates for the whole 3x3 board on a 640x480 frame
+_BASE_GRID_X_MIN, _BASE_GRID_X_MAX = 170, 470
+_BASE_GRID_Y_MIN, _BASE_GRID_Y_MAX = 90, 390
+
+# Apply scale and offset (centered scaling)
+grid_w = (_BASE_GRID_X_MAX - _BASE_GRID_X_MIN) * GRID_SCALE
+grid_h = (_BASE_GRID_Y_MAX - _BASE_GRID_Y_MIN) * GRID_SCALE
+center_x = (_BASE_GRID_X_MIN + _BASE_GRID_X_MAX) / 2
+center_y = (_BASE_GRID_Y_MIN + _BASE_GRID_Y_MAX) / 2
+
+GRID_X_MIN = int(center_x - grid_w / 2 + GRID_OFFSET_X)
+GRID_X_MAX = int(center_x + grid_w / 2 + GRID_OFFSET_X)
+GRID_Y_MIN = int(center_y - grid_h / 2 + GRID_OFFSET_Y)
+GRID_Y_MAX = int(center_y + grid_h / 2 + GRID_OFFSET_Y)
+
 CELL_W = (GRID_X_MAX - GRID_X_MIN) // 3
 CELL_H = (GRID_Y_MAX - GRID_Y_MIN) // 3
 
