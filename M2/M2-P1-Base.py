@@ -85,7 +85,7 @@ class VisionPipeline:
         return False
 
     def transform_frame(self, frame):
-        """Crops the workspace area inside the ArUco markers."""
+        # Crops the workspace area inside the ArUco markers.
         if frame is None or frame.size == 0:
             return None
 

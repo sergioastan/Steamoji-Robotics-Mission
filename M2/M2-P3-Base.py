@@ -6,7 +6,7 @@ import threading
 from pymycobot.mycobot280 import MyCobot280
 
 # =====================================================================
-# 1. ROBOT INITIALIZATION (Startup Position Only)
+# 1. ROBOT INITIALIZATION
 # =====================================================================
 try:
     print("Connecting to myCobot280...")
