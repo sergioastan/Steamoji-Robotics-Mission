@@ -1,9 +1,16 @@
+# TODO: Import the cv2, mediapipe, math, time, and numpy packages.
+# ---
 import cv2
 import mediapipe as mp
 import math
 import time
 import numpy as np
+# ---
+
+# TODO: Import the MyCobot280 package from the pymycobot library
+# ---
 from pymycobot.mycobot280 import MyCobot280
+# ---
 
 # ==========================================
 # 1. HARDWARE & WORKSPACE INITIALIZATION

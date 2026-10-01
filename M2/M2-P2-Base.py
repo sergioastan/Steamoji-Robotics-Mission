@@ -1,23 +1,39 @@
+# Remember to cover the two markers on the board for this project!
+
+# TODO: Import the cv2, numpy, and time packages from the Python package library.
+# ---
 import time
 import cv2
 import numpy as np
+# ---
+
+# TODO: Import the MyCobot280 package from the pymycobot library
+# ---
 from pymycobot.mycobot280 import MyCobot280
+# ---
 
 # =====================================================================
 # 1. ROBOT INITIALIZATION
 # =====================================================================
 try:
+    # TODO: Initialize the arm, wait, and ensure the arm is on.
+    # ---
     print("Connecting to myCobot280...")
     mc = MyCobot280('/dev/ttyAMA0', 1000000)
     time.sleep(0.5)
     mc.power_on()
     time.sleep(0.5)
+    # ---
     
-    # Move to initial folded position (Angles: J1-J6)
+    
+    # TODO: Move arm to initial folded position
+    # ---
     folded_angles = [0, 45, -90, -45, 0, 0]
     print("Moving arm to initial folded position...")
     mc.send_angles(folded_angles, 20)
     time.sleep(2.0)
+    # ---
+    
     print("Robot ready.")
     
 except Exception as e:

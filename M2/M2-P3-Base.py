@@ -1,25 +1,39 @@
-import os
-import time
+# TODO: Import the cv2, numpy, os, and time packages from the Python package library
+# ---
 import cv2
 import numpy as np
+import time
+import os
+# ---
+
 import threading
+
+# TODO: Import the MyCobot280 package from the pymycobot library
+# ---
 from pymycobot.mycobot280 import MyCobot280
+# ---
 
 # =====================================================================
 # 1. ROBOT INITIALIZATION
 # =====================================================================
 try:
+    # TODO: Initialize the arm, wait, and ensure the arm is on.
+    # ---
     print("Connecting to myCobot280...")
     mc = MyCobot280('/dev/ttyAMA0', 1000000)
     time.sleep(0.5)
     mc.power_on()
     time.sleep(0.5)
+    # ---
 
-    # Move to initial folded position (Angles: J1-J6)
+    # TODO: Move arm to initial folded position
+    # ---
     folded_angles = [0, 45, -90, -45, 0, 0]
     print("Moving arm to initial folded position...")
     mc.send_angles(folded_angles, 20)
     time.sleep(2.0)
+    # ---
+
     print("Robot ready.")
 
 except Exception as e:
@@ -31,7 +45,7 @@ except Exception as e:
 # 2. THREADED CAMERA PIPELINE
 # =====================================================================
 class ThreadedCamera:
-    """Asynchronous camera reader thread to eliminate V4L2 frame buffer latency."""
+    # Asynchronous camera reader thread to eliminate V4L2 frame buffer latency.
     def __init__(self, src=0):
         self.cap = cv2.VideoCapture(src, cv2.CAP_V4L2)
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
@@ -94,19 +108,23 @@ class VisionPipeline:
             self.aruco_params = cv2.aruco.DetectorParameters_create()
             self.use_new_aruco = False
 
-        # Load YOLOv5 Model & Class Names
         script_dir = os.path.dirname(os.path.abspath(__file__))
+
+        # TODO: Load YOLOv5 Model & Class Names
+        # ---
         model_path = os.path.join(script_dir, "yolov5s.onnx")
         labels_path = os.path.join(script_dir, "coco.names")
+        # ---
 
         self.net = cv2.dnn.readNet(model_path) if os.path.exists(model_path) else None
+
         self.classes = []
         if os.path.exists(labels_path):
             with open(labels_path, "r") as f:
                 self.classes = [line.strip() for line in f if line.strip()]
 
     def calculate_aruco_bounds(self, frame):
-        """Detects ArUco markers to establish workspace bounds."""
+        # Detects ArUco markers to establish workspace bounds.
         if frame is None or frame.size == 0:
             return False
 
@@ -131,7 +149,7 @@ class VisionPipeline:
         return False
 
     def transform_frame(self, frame):
-        """Crops the workspace area inside the ArUco markers."""
+        # Crops the workspace area inside the ArUco markers.
         if frame is None or frame.size == 0:
             return None
 
@@ -157,7 +175,7 @@ class VisionPipeline:
         return resized
 
     def yolo_detect(self, img):
-        """Performs YOLOv5 ONNX detection and returns annotated frame + status string."""
+        # Performs YOLOv5 ONNX detection and returns annotated frame + status string.
         if img is None or img.size == 0:
             return img, "No Frame"
 
