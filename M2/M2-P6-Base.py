@@ -1,13 +1,22 @@
 import cv2
 import numpy as np
 import time
-from pymycobot.mycobot import MyCobot
+import RPi.GPIO as GPIO
+from pymycobot.mycobot280 import MyCobot280
 
 # ==========================================
 # 1. HARDWARE & WAYPOINT CONFIGURATION
 # ==========================================
-mc = MyCobot('/dev/ttyAMA0', 115200)
+mc = MyCobot280('/dev/ttyAMA0', 1000000)
 time.sleep(0.5)
+
+# GPIO Setup for Pump (BCM pins 20, 21 - same as M1 Project 08)
+GPIO.setwarnings(False)
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(20, GPIO.OUT)
+GPIO.setup(21, GPIO.OUT)
+GPIO.output(20, 1)  # Pump OFF (HIGH)
+GPIO.output(21, 1)  # Valve release (HIGH)
 
 SPEED = 40
 
@@ -28,13 +37,13 @@ UPPER_GREEN = np.array([85, 255, 255])
 # 2. HELPER FUNCTIONS
 # ==========================================
 def set_pump(state):
-    """Controls suction pump (1=ON, 0=OFF)."""
+    """Controls suction pump (1=ON, 0=OFF) via GPIO pins 20, 21."""
     if state == 1:
-        mc.set_basic_output(2, 0) # Pump ON
-        mc.set_basic_output(5, 0) # Valve closed
+        GPIO.output(20, 0)  # Pump ON (LOW)
+        GPIO.output(21, 0)  # Valve closed (LOW)
     else:
-        mc.set_basic_output(2, 1) # Pump OFF
-        mc.set_basic_output(5, 1) # Valve release
+        GPIO.output(20, 1)  # Pump OFF (HIGH)
+        GPIO.output(21, 1)  # Valve release (HIGH)
     time.sleep(0.3)
 
 def inspect_part(roi):
@@ -134,4 +143,5 @@ finally:
     cap.release()
     cv2.destroyAllWindows()
     set_pump(0)
+    GPIO.cleanup()
     mc.release_all_servos()

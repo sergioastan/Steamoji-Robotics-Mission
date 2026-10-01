@@ -28,7 +28,7 @@ try:
     # TODO: Move arm to initial folded position
     # ---
     home_pos = [0, 45, -90, -45, 0, 0]
-    mc.send_angles(home_pos, 20)
+    mc.send_angles(home_pos, 50)
     time.sleep(2.0)
 
     print("Robot ready.")

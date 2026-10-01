@@ -10,7 +10,7 @@ from pymycobot.mycobot280 import MyCobot280
 # ==========================================
 # Initialize myCobot (Default Pi serial port)
 
-mc = MyCobot('/dev/ttyAMA0', 1000000)
+mc = MyCobot280('/dev/ttyAMA0', 1000000)
 time.sleep(0.5)
 
 # Safety workspace limits in millimeters (myCobot 280)
@@ -91,7 +91,8 @@ try:
                 current_time = time.time()
                 if current_time - last_command_time > COMMAND_INTERVAL:
                     # Send position command: [X, Y, Z, Rx, Ry, Rz]
-                    mc.send_coords([robot_x, robot_y, Z_HEIGHT, -180, 0, 0], ARM_SPEED, 1)
+                    print(f"Target: X={robot_x:.1f}, Y={robot_y:.1f}, Z={Z_HEIGHT}")
+                    mc.send_coords([robot_x, robot_y, Z_HEIGHT, -180, 0, -135], ARM_SPEED, 0)
 
                     # Control end-effector based on pinch state
                     if is_pinching:

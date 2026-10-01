@@ -18,13 +18,28 @@ POS_HOME = [180, 0, 220, -180, 0, 0]
 POS_TOKEN_SUPPLY = [120, -180, 110, -180, 0, 0]
 POS_TOKEN_HOVER  = [120, -180, 200, -180, 0, 0]
 
-# Physical Coordinates [X, Y] for each of the 9 grid cells on table (Z=110mm for placement)
-# Map corresponds to [row][col] from top-left to bottom-right
-CELL_COORDS = {
+# ==========================================
+# BOARD CALIBRATION SETTINGS
+# ==========================================
+BOARD_SCALE = 1.0      # Scale factor for board size (1.0 = original, 0.8 = 80% size)
+BOARD_OFFSET_X = 0.0   # Offset in arm's +X direction (mm)
+BOARD_OFFSET_Y = 0.0   # Offset in arm's +Y direction (mm)
+
+# Base coordinates (unscaled, unoffset)
+_BASE_CELL_COORDS = {
     (0, 0): [220, -60], (0, 1): [220, 0], (0, 2): [220, 60],
     (1, 0): [180, -60], (1, 1): [180, 0], (1, 2): [180, 60],
     (2, 0): [140, -60], (2, 1): [140, 0], (2, 2): [140, 60]
 }
+
+# Apply scale and offset
+CELL_COORDS = {}
+for (r, c), (x, y) in _BASE_CELL_COORDS.items():
+    CELL_COORDS[(r, c)] = [
+        x * BOARD_SCALE + BOARD_OFFSET_X,
+        y * BOARD_SCALE + BOARD_OFFSET_Y
+    ]
+
 Z_PLACE_HEIGHT = 110
 
 # Vision bounds

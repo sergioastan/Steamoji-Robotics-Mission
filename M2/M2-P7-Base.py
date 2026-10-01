@@ -1,12 +1,63 @@
 import cv2
 import numpy as np
+import time
+
+# TODO: Import the MyCobot280 package from the pymycobot library
+# ---
+from pymycobot.mycobot280 import MyCobot280
+# ---
+
+# =====================================================================
+# ROBOT INITIALIZATION
+# =====================================================================
+
+try:
+    # TODO: Initialize the arm, wait, and ensure the arm is on.
+    # ---
+    print("Connecting to myCobot280...")
+
+    mc = MyCobot280('/dev/ttyAMA0', 1000000)
+    time.sleep(0.5)
+    mc.power_on()
+    time.sleep(0.5)
+    # ---
+    
+    # TODO: Move arm to initial folded position
+    # ---
+    home_pos = [0, 45, -90, -45, 0, 0]
+    mc.send_angles(home_pos, 50)
+    time.sleep(2.0)
+
+    print("Robot ready.")
+    # ---
+
+except Exception as e:
+    print(f"Robot hardware warning: {e}")
+    print("Continuing with OpenCV camera pipeline only...\n")
+
 
 # ==========================================
 # 1. GRID CONFIGURATION (3x3 REGION OF INTEREST)
 # ==========================================
-# Define pixel coordinates for the whole 3x3 board on a 640x480 frame
-GRID_X_MIN, GRID_X_MAX = 170, 470
-GRID_Y_MIN, GRID_Y_MAX = 90, 390
+# Vision calibration settings
+GRID_SCALE = 0.75       # Scale factor for grid size (1.0 = original)
+GRID_OFFSET_X = -10      # Horizontal offset in pixels (+X = right)
+GRID_OFFSET_Y = -70      # Vertical offset in pixels (+Y = down)
+
+# Base pixel coordinates for the whole 3x3 board on a 640x480 frame
+_BASE_GRID_X_MIN, _BASE_GRID_X_MAX = 170, 470
+_BASE_GRID_Y_MIN, _BASE_GRID_Y_MAX = 90, 390
+
+# Apply scale and offset
+grid_w = (_BASE_GRID_X_MAX - _BASE_GRID_X_MIN) * GRID_SCALE
+grid_h = (_BASE_GRID_Y_MAX - _BASE_GRID_Y_MIN) * GRID_SCALE
+center_x = (_BASE_GRID_X_MIN + _BASE_GRID_X_MAX) / 2
+center_y = (_BASE_GRID_Y_MIN + _BASE_GRID_Y_MAX) / 2
+
+GRID_X_MIN = int(center_x - grid_w / 2 + GRID_OFFSET_X)
+GRID_X_MAX = int(center_x + grid_w / 2 + GRID_OFFSET_X)
+GRID_Y_MIN = int(center_y - grid_h / 2 + GRID_OFFSET_Y)
+GRID_Y_MAX = int(center_y + grid_h / 2 + GRID_OFFSET_Y)
 
 # Calculate width and height of an individual cell
 CELL_W = (GRID_X_MAX - GRID_X_MIN) // 3
@@ -20,7 +71,7 @@ LOWER_RED2 = np.array([170, 120, 100])
 UPPER_RED2 = np.array([180, 255, 255])
 
 # Blue Tokens = 'O' (Robot Player)
-LOWER_BLUE = np.array([100, 120, 100])
+LOWER_BLUE = np.array([90, 120, 100])
 UPPER_BLUE = np.array([130, 255, 255])
 
 # ==========================================

@@ -1,5 +1,39 @@
 import cv2
 import numpy as np
+import time
+
+# TODO: Import the MyCobot280 package from the pymycobot library
+# ---
+from pymycobot.mycobot280 import MyCobot280
+# ---
+
+# =====================================================================
+# ROBOT INITIALIZATION
+# =====================================================================
+
+try:
+    # TODO: Initialize the arm, wait, and ensure the arm is on.
+    # ---
+    print("Connecting to myCobot280...")
+
+    mc = MyCobot280('/dev/ttyAMA0', 1000000)
+    time.sleep(0.5)
+    mc.power_on()
+    time.sleep(0.5)
+    # ---
+    
+    # TODO: Move arm to initial folded position
+    # ---
+    home_pos = [0, 45, -90, -45, 0, 0]
+    mc.send_angles(home_pos, 50)
+    time.sleep(2.0)
+
+    print("Robot ready.")
+    # ---
+
+except Exception as e:
+    print(f"Robot hardware warning: {e}")
+    print("Continuing with OpenCV camera pipeline only...\n")
 
 # ==========================================
 # 1. INSPECTION CRITERIA CONFIGURATION
