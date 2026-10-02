@@ -1,16 +1,11 @@
-# TODO: Import the cv2, mediapipe, numpy, time, random, and threading packages
+﻿# TODO: Import the cv2, mediapipe, numpy, time, random, and threading packages
 # ---
-import cv2
-import mediapipe as mp
-import numpy as np
-import time
-import random
-import threading
+# 
 # ---
 
 # TODO: Import the MyCobot280 package from the pymycobot library
 # ---
-from pymycobot.mycobot280 import MyCobot280
+# 
 # ---
 
 # =====================================================================
@@ -20,20 +15,14 @@ from pymycobot.mycobot280 import MyCobot280
 try:
     # TODO: Initialize the arm, wait, and ensure the arm is on.
     # ---
-    print("Connecting to myCobot280...")
-
-    mc = MyCobot280('/dev/ttyAMA0', 1000000)
-    time.sleep(0.5)
-    mc.power_on()
-    time.sleep(0.5)
+    # 
     # ---
     
     # TODO: Move arm to initial folded position
     # ---
-    home_pos = [0, 0, 0, 0, 0, 0]
-    mc.send_angles(home_pos, 50)
-    time.sleep(2.0)
-
+    # 
+    # ---
+    
     print("Robot ready.")
     # ---
 
@@ -133,20 +122,12 @@ class ThreadedCamera:
 
 # TODO: Initialize MediaPipe Hands solution
 # ---
-mp_hands = mp.solutions.hands
-mp_drawing = mp.solutions.drawing_utils
-
-hands = mp_hands.Hands(
-    static_image_mode=False,
-    max_num_hands=1,
-    min_detection_confidence=0.7,
-    min_tracking_confidence=0.7
-)
+# 
 # ---
 
 # TODO: Initialize threaded camera
 # ---
-cap = ThreadedCamera(0)
+# 
 # ---
 
 # Cooldown to prevent rapid re-triggering
@@ -160,168 +141,37 @@ GAME_COOLDOWN = 2.0  # seconds
 
 # TODO: Define function to count extended fingers from hand landmarks
 # ---
-def count_fingers(hand_landmarks):
-    """
-    Count extended fingers using MediaPipe landmarks.
-    Returns: number of extended fingers (0-5)
-    """
-    tips = [4, 8, 12, 16, 20]  # Thumb, Index, Middle, Ring, Pinky tips
-    pips = [3, 6, 10, 14, 18]  # Corresponding PIP joints
-    
-    extended = 0
-    
-    # Thumb: compare x-coordinates (horizontal)
-    if hand_landmarks.landmark[tips[0]].x < hand_landmarks.landmark[pips[0]].x:
-        extended += 1
-    
-    # Other 4 fingers: compare y-coordinates (vertical, tip above pip = extended)
-    for i in range(1, 5):
-        if hand_landmarks.landmark[tips[i]].y < hand_landmarks.landmark[pips[i]].y:
-            extended += 1
-            
-    return extended
+# 
 # ---
 
 
 # TODO: Define function to classify gesture based on finger count
 # ---
-def classify_gesture(finger_count):
-    """
-    Classify gesture based on finger count.
-    Returns: "Rock", "Paper", "Scissors", or "Unknown"
-    """
-    # 0 fingers (fist) = Rock
-    # 5 fingers (open hand) = Paper  
-    # 2 fingers (index + middle) = Scissors
-    # Anything else = Unknown
-    if finger_count == 0:
-        return "Rock"
-    elif finger_count == 5:
-        return "Paper"
-    elif finger_count == 2:
-        return "Scissors"
-    else:
-        return "Unknown"
+# 
 # ---
 
 
 # TODO: Define function for robot to randomly choose a move
 # ---
-def get_robot_move():
-    """
-    Robot randomly chooses Rock, Paper, or Scissors.
-    Returns: gesture string
-    """
-    return random.choice(GESTURES)
+# 
 # ---
 
 
 # TODO: Define function to determine round winner
 # ---
-def determine_winner(player_move, robot_move):
-    """
-    Determine round winner.
-    Returns: "PLAYER", "ROBOT", or "DRAW"
-    """
-    if player_move == robot_move:
-        return "DRAW"
-    
-    p_idx = GESTURE_IDX[player_move]
-    r_idx = GESTURE_IDX[robot_move]
-    
-    return WIN_MAP.get((p_idx, r_idx), "DRAW")
+# 
 # ---
 
 
 # TODO: Define function to execute robot gesture movement
 # ---
-def execute_robot_gesture(gesture):
-    """
-    Move robot to show the chosen gesture.
-    """
-    global last_robot_move
-    
-    if gesture == "Rock":
-        pose = POSE_ROCK
-        grip = GRIP_ROCK
-    elif gesture == "Paper":
-        pose = POSE_PAPER
-        grip = GRIP_PAPER
-    else:  # Scissors
-        pose = POSE_SCISSORS
-        grip = GRIP_SCISSORS
-    
-    # Move to gesture pose
-    mc.send_coords(pose, ARM_SPEED, 1)
-    time.sleep(1.5)
-    
-    # Set gripper
-    mc.set_gripper_state(grip, 80)
-    time.sleep(0.5)
-    
-    last_robot_move = gesture
-    
-    # Hold pose briefly for player to see
-    time.sleep(1.0)
-    
-    # Return to home
-    mc.send_angles(home_pos, ARM_SPEED)
-    time.sleep(1.5)
+# 
 # ---
 
 
 # TODO: Define function to draw game UI on frame
 # ---
-def draw_ui(frame, player_gesture, robot_gesture, result, finger_count):
-    """
-    Draw game UI on frame.
-    """
-    h, w = frame.shape[:2]
-    
-    # Title
-    cv2.putText(frame, "Rock Paper Scissors!", (20, 40),
-                cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), 2)
-    
-    # Score
-    score_text = f"Player: {player_score}  |  Robot: {robot_score}  |  Round: {rounds_played}"
-    cv2.putText(frame, score_text, (20, 80),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
-    
-    # Player gesture detection
-    if player_gesture != "Unknown":
-        cv2.putText(frame, f"Your Move: {player_gesture}", (20, 130),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
-    else:
-        cv2.putText(frame, f"Fingers: {finger_count} - Make a clear gesture!", (20, 130),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
-    
-    # Robot gesture
-    if robot_gesture:
-        cv2.putText(frame, f"Robot Move: {robot_gesture}", (20, 170),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
-    
-    # Result
-    if result == "PLAYER":
-        color = (0, 255, 0)
-        text = "YOU WIN!"
-    elif result == "ROBOT":
-        color = (0, 0, 255)
-        text = "ROBOT WINS!"
-    elif result == "DRAW":
-        color = (255, 255, 0)
-        text = "DRAW!"
-    else:
-        color = (255, 255, 255)
-        text = game_result
-    
-    cv2.putText(frame, text, (20, 230),
-                cv2.FONT_HERSHEY_SIMPLEX, 1.2, color, 3)
-    
-    # Instructions
-    cv2.putText(frame, "Show: Fist=Rock | Open Hand=Paper | Peace=Scissors", (20, h - 60),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
-    cv2.putText(frame, "Press 'r' to reset score | 'q' to quit", (20, h - 30),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
+# 
 # ---
 
 
@@ -339,15 +189,7 @@ try:
     while cap.isOpened():
         # TODO: Read and preprocess camera frame
         # ---
-        ret, frame = cap.read()
-        if not ret:
-            break
-        
-        # Flip for mirror view
-        frame = cv2.flip(frame, 1)
-        h, w = frame.shape[:2]
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = hands.process(rgb_frame)
+        # 
         # ---
         
         player_gesture = "Unknown"
@@ -358,17 +200,12 @@ try:
             for hand_landmarks in results.multi_hand_landmarks:
                 # TODO: Draw hand skeleton landmarks
                 # ---
-                mp_drawing.draw_landmarks(
-                    frame, hand_landmarks, mp_hands.HAND_CONNECTIONS,
-                    mp_drawing.DrawingSpec(color=(0, 255, 0), thickness=2, circle_radius=2),
-                    mp_drawing.DrawingSpec(color=(255, 0, 0), thickness=2)
-                )
+                # 
                 # ---
                 
                 # TODO: Count fingers and classify gesture
                 # ---
-                finger_count = count_fingers(hand_landmarks)
-                player_gesture = classify_gesture(finger_count)
+                # 
                 # ---
                 
                 # Check if valid gesture and cooldown passed
@@ -378,8 +215,7 @@ try:
                 if valid_gesture and cooldown_ready:
                     # TODO: Get robot move and determine winner
                     # ---
-                    robot_gesture = get_robot_move()
-                    result = determine_winner(player_gesture, robot_gesture)
+                    # 
                     # ---
                     
                     # Update scores
@@ -391,7 +227,7 @@ try:
                     
                     # TODO: Execute robot gesture movement
                     # ---
-                    execute_robot_gesture(robot_gesture)
+                    # 
                     # ---
                     
                     game_result = result
@@ -403,12 +239,12 @@ try:
         
         # TODO: Draw game UI on frame
         # ---
-        draw_ui(frame, player_gesture, last_robot_move, game_result, finger_count)
+        # 
         # ---
         
         # TODO: Display the frame
         # ---
-        cv2.imshow("Mission 02 - Project 06: Rock Paper Scissors", frame)
+        # 
         # ---
         
         key = cv2.waitKey(1) & 0xFF

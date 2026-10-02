@@ -1,14 +1,28 @@
+# TODO: Import the cv2, numpy, and time packages from the Python package library
+# ---
 import cv2
 import numpy as np
 import time
+# ---
+
+# TODO: Import the RPi.GPIO package for pump control
+# ---
 import RPi.GPIO as GPIO
+# ---
+
+# TODO: Import the MyCobot280 package from the pymycobot library
+# ---
 from pymycobot.mycobot280 import MyCobot280
+# ---
 
 global POS_HOME_CARTESIAN
 
 # ==========================================
 # 1. HARDWARE & COORDINATE CONFIGURATION
 # ==========================================
+
+# TODO: Initialize the robot arm connection and verify it works
+# ---
 mc = MyCobot280('/dev/ttyAMA0', 1000000)
 time.sleep(0.5)
 
@@ -20,7 +34,10 @@ except Exception as e:
     print(f"Warning during init: {e}")
     import traceback
     traceback.print_exc()
+# ---
 
+# TODO: Initialize GPIO pins for the suction pump
+# ---
 # GPIO Pump Setup (from M1/Project-08-Base.py)
 GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)
@@ -28,6 +45,7 @@ GPIO.setup(20, GPIO.OUT)
 GPIO.setup(21, GPIO.OUT)
 GPIO.output(20, 1)  # Off initially
 GPIO.output(21, 1)
+# ---
 
 ARM_SPEED = 40
 
@@ -42,6 +60,29 @@ tokens_picked = 0
 
 # We'll compute POS_HOME_CARTESIAN after moving to home angles
 POS_HOME_CARTESIAN = None
+
+# TODO: Move robot arm to initial home position for camera scanning
+# ---
+# Move robot to overhead home scan position using joint angles (like M1)
+print(f"Moving to home angles: {POS_HOME_ANGLES}")
+try:
+    print("  Sending send_angles command...")
+    result = mc.send_angles(POS_HOME_ANGLES, ARM_SPEED)
+    print(f"  send_angles returned: {result}")
+    time.sleep(4.0)
+    # Capture Cartesian position for return moves
+    POS_HOME_CARTESIAN = mc.get_coords()
+    print(f"Home position (cartesian): {POS_HOME_CARTESIAN}")
+    angles_after = mc.get_angles()
+    print(f"Angles after move: {angles_after}")
+except Exception as e:
+    print(f"Error moving to home: {e}")
+    import traceback
+    traceback.print_exc()
+    POS_HOME_CARTESIAN = [66, -62, 235, 180, 0, 90]  # fallback
+set_pump(0)
+time.sleep(1.0)
+# ---
 
 # ==========================================
 # BOARD CELL COORDINATES (hard-coded per cell [X, Y, Z, Rx, Ry, Rz])
@@ -87,6 +128,9 @@ LOWER_GREEN = np.array([40, 80, 80]); UPPER_GREEN = np.array([85, 255, 255])
 # ==========================================
 # 2. HELPER & GAME LOGIC FUNCTIONS
 # ==========================================
+
+# TODO: Define pump control function for suction
+# ---
 def set_pump(state):
     """Controls suction pump via GPIO (1=ON, 0=OFF). Active LOW."""
     if state == 1:
@@ -96,7 +140,10 @@ def set_pump(state):
         GPIO.output(20, 1)
         GPIO.output(21, 1)
     time.sleep(0.3)
+# ---
 
+# TODO: Define function to parse board state from camera frame
+# ---
 def parse_board_state(frame):
     """Scans all 9 cells and returns 3x3 matrix."""
     board = [[' ' for _ in range(3)] for _ in range(3)]
@@ -117,7 +164,10 @@ def parse_board_state(frame):
             elif r_pix > 800 and r_pix > g_pix:
                 board[r][c] = 'O'
     return board
+# ---
 
+# TODO: Define AI logic to find best Tic-Tac-Toe move
+# ---
 def find_best_move(board):
     """Calculates AI move: Checks for win, block, or picks first empty space."""
     # 1. Check if AI can win immediately or needs to block Human
@@ -140,7 +190,10 @@ def find_best_move(board):
             if board[r][c] == ' ':
                 return (r, c)
     return None
+# ---
 
+# TODO: Define function to check for winning conditions
+# ---
 def check_winner(b):
     """Checks for 3-in-a-row winning conditions."""
     for i in range(3):
@@ -149,7 +202,10 @@ def check_winner(b):
     if b[0][0] == b[1][1] == b[2][2] != ' ': return b[0][0]
     if b[0][2] == b[1][1] == b[2][0] != ' ': return b[0][2]
     return None
+# ---
 
+# TODO: Define robot pick-and-place sequence for placing tokens
+# ---
 def execute_robot_move(target_cell):
     """Executes pick-and-place sequence to place an 'O' token at target grid cell."""
     global POS_HOME_CARTESIAN, tokens_picked
@@ -200,13 +256,18 @@ def execute_robot_move(target_cell):
     print("  Returning home...")
     mc.send_coords(POS_HOME_CARTESIAN, ARM_SPEED, 0)
     time.sleep(3.0)
+# ---
 
 # ==========================================
 # 3. MAIN GAME LOOP
 # ==========================================
+
+# TODO: Initialize camera and start main game loop
+# ---
 cap = cv2.VideoCapture(0)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+# ---
 
 # Move robot to overhead home scan position using joint angles (like M1)
 print(f"Moving to home angles: {POS_HOME_ANGLES}")
@@ -231,6 +292,8 @@ time.sleep(1.0)
 print("Starting Physical Tic-Tac-Toe Game Cell.")
 print("Place an 'X' on the grid, then press 'space' to trigger myCobot's turn!")
 
+# TODO: Main game loop - read frames, detect board, handle robot moves
+# ---
 try:
     while cap.isOpened():
         ret, frame = cap.read()
@@ -275,6 +338,7 @@ try:
         elif key == ord('q'):
             break
 
+# ---
 finally:
     cap.release()
     cv2.destroyAllWindows()

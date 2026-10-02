@@ -1,15 +1,13 @@
-# Remember to cover the two markers on the board for this project!
+﻿# Remember to cover the two markers on the board for this project!
 
 # TODO: Import the cv2, numpy, and time packages from the Python package library.
 # ---
-import time
-import cv2
-import numpy as np
+# 
 # ---
 
 # TODO: Import the MyCobot280 package from the pymycobot library
 # ---
-from pymycobot.mycobot280 import MyCobot280
+# 
 # ---
 
 # =====================================================================
@@ -18,20 +16,12 @@ from pymycobot.mycobot280 import MyCobot280
 try:
     # TODO: Initialize the arm, wait, and ensure the arm is on.
     # ---
-    print("Connecting to myCobot280...")
-    mc = MyCobot280('/dev/ttyAMA0', 1000000)
-    time.sleep(0.5)
-    mc.power_on()
-    time.sleep(0.5)
+    # 
     # ---
-    
     
     # TODO: Move arm to initial folded position
     # ---
-    folded_angles = [0, 45, -90, -45, 0, 0]
-    print("Moving arm to initial folded position...")
-    mc.send_angles(folded_angles, 20)
-    time.sleep(2.0)
+    # 
     # ---
     
     print("Robot ready.")
@@ -66,18 +56,9 @@ class ArUcoMarkerPipeline:
 
         # TODO: Initialize ArUco dictionary and detector parameters
         # ---
-        # Safe ArUco initialization across OpenCV versions
-        try:
-            self.aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_6X6_250)
-            self.aruco_params = cv2.aruco.DetectorParameters()
-            self.detector = cv2.aruco.ArucoDetector(self.aruco_dict, self.aruco_params)
-            self.use_new_aruco = True
-        except AttributeError:
-            self.aruco_dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_6X6_250)
-            self.aruco_params = cv2.aruco.DetectorParameters_create()
-            self.use_new_aruco = False
+        # 
         # ---
-
+    
     def process_frame(self, frame):
         """Detects ArUco markers, estimates 3D camera-relative pose, and draws overlays."""
         if frame is None or frame.size == 0:
@@ -87,65 +68,41 @@ class ArUcoMarkerPipeline:
 
         # TODO: Detect ArUco markers in the frame
         # ---
-        # Detect markers based on OpenCV version
-        if self.use_new_aruco:
-            corners, ids, _ = self.detector.detectMarkers(gray)
-        else:
-            corners, ids, _ = cv2.aruco.detectMarkers(
-                gray, self.aruco_dict, parameters=self.aruco_params
-            )
+        # 
         # ---
-
+        
         status_msg = "Searching for markers..."
 
         if ids is not None and len(corners) > 0:
             # TODO: Draw detected marker outlines
             # ---
-            # Draw outlines on detected markers
-            cv2.aruco.drawDetectedMarkers(frame, corners, ids)
+            # 
             # ---
-
+            
             # TODO: Estimate pose (position & orientation) of each marker
             # ---
-            # Pose estimation for single markers
-            rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(
-                corners, self.marker_size_m, self.camera_matrix, self.dist_coeffs
-            )
+            # 
             # ---
-
+            
             for i in range(len(ids)):
                 marker_id = int(ids[i][0])
                 tvec = tvecs[i][0]  # [X, Y, Z] in meters
 
                 # TODO: Calculate marker position relative to robot pump/end-effector
                 # ---
-                # Calculate position in mm relative to end-effector pump
-                rel_x = round(tvec[0] * 1000 + self.pump_y, 2)
-                rel_y = round(tvec[1] * 1000 + self.pump_x, 2)
-                rel_z = round(tvec[2] * 1000, 2)
+                # 
                 # ---
-
+                
                 # TODO: Draw 3D coordinate axes on the marker
                 # ---
-                # Draw axis overlay
-                cv2.drawFrameAxes(
-                    frame, self.camera_matrix, self.dist_coeffs,
-                    rvecs[i], tvecs[i], self.marker_size_m * 0.5
-                )
+                # 
                 # ---
-
+                
                 # TODO: Draw coordinate text overlay near marker center
                 # ---
-                # Draw coordinate overlay text near marker center
-                corner_center = np.mean(corners[i][0], axis=0).astype(int)
-                label_text = f"ID:{marker_id} X:{rel_x} Y:{rel_y} Z:{rel_z}mm"
-                
-                cv2.putText(
-                    frame, label_text, (corner_center[0] - 80, corner_center[1] - 15),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2
-                )
+                # 
                 # ---
-
+                
                 status_msg = f"ID: {marker_id} | X: {rel_x}mm | Y: {rel_y}mm | Z: {rel_z}mm"
 
         return frame, status_msg
@@ -153,17 +110,7 @@ class ArUcoMarkerPipeline:
 
 # TODO: Define function to find working camera index
 # ---
-def find_working_camera(max_tests=5):
-    """Scans video indices and returns the first camera that produces frames."""
-    for idx in range(max_tests):
-        cap = cv2.VideoCapture(idx, cv2.CAP_V4L2)
-        if cap.isOpened():
-            ret, frame = cap.read()
-            cap.release()
-            if ret and frame is not None and frame.size > 0:
-                print(f"Found active camera at index {idx}")
-                return idx
-    return None
+# 
 # ---
 
 # =====================================================================
@@ -196,19 +143,18 @@ def main():
 
         # TODO: Process frame for ArUco detection and pose estimation
         # ---
-        display_frame, log_info = vision.process_frame(frame)
+        # 
         # ---
-
+        
         # Print metric diagnostics directly to terminal when a marker is in view
         if "Searching" not in log_info and "No Frame" not in log_info:
             print(f"\r[Detected] {log_info}", end="")
 
         # TODO: Display the processed frame
         # ---
-        if display_frame is not None and display_frame.size > 0:
-            cv2.imshow("ArUco Marker Pose Detection", display_frame)
+        # 
         # ---
-
+        
         # Exit program on 'q' keypress
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break

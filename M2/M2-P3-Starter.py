@@ -1,16 +1,13 @@
-# TODO: Import the cv2, numpy, os, and time packages from the Python package library
+﻿# TODO: Import the cv2, numpy, os, and time packages from the Python package library
 # ---
-import cv2
-import numpy as np
-import time
-import os
+# 
 # ---
 
 import threading
 
 # TODO: Import the MyCobot280 package from the pymycobot library
 # ---
-from pymycobot.mycobot280 import MyCobot280
+# 
 # ---
 
 # =====================================================================
@@ -19,21 +16,14 @@ from pymycobot.mycobot280 import MyCobot280
 try:
     # TODO: Initialize the arm, wait, and ensure the arm is on.
     # ---
-    print("Connecting to myCobot280...")
-    mc = MyCobot280('/dev/ttyAMA0', 1000000)
-    time.sleep(0.5)
-    mc.power_on()
-    time.sleep(0.5)
+    # 
     # ---
-
+    
     # TODO: Move arm to initial folded position
     # ---
-    folded_angles = [0, 45, -90, -45, 0, 0]
-    print("Moving arm to initial folded position...")
-    mc.send_angles(folded_angles, 20)
-    time.sleep(2.0)
+    # 
     # ---
-
+    
     print("Robot ready.")
 
 except Exception as e:
@@ -99,94 +89,36 @@ class VisionPipeline:
 
         # TODO: Initialize ArUco dictionary and detector parameters
         # ---
-        # Safe ArUco initialization across OpenCV 4.x versions
-        try:
-            self.aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_6X6_250)
-            self.aruco_params = cv2.aruco.DetectorParameters()
-            self.detector = cv2.aruco.ArucoDetector(self.aruco_dict, self.aruco_params)
-            self.use_new_aruco = True
-        except AttributeError:
-            self.aruco_dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_6X6_250)
-            self.aruco_params = cv2.aruco.DetectorParameters_create()
-            self.use_new_aruco = False
+        # 
         # ---
 
         script_dir = os.path.dirname(os.path.abspath(__file__))
 
         # TODO: Load YOLOv5 Model & Class Names
         # ---
-        model_path = os.path.join(script_dir, "yolov5s.onnx")
-        labels_path = os.path.join(script_dir, "coco.names")
+        # 
         # ---
 
         # TODO: Initialize YOLOv5 neural network
         # ---
-        self.net = cv2.dnn.readNet(model_path) if os.path.exists(model_path) else None
+        # 
         # ---
 
         # TODO: Load COCO class names
         # ---
-        self.classes = []
-        if os.path.exists(labels_path):
-            with open(labels_path, "r") as f:
-                self.classes = [line.strip() for line in f if line.strip()]
+        # 
         # ---
 
     def calculate_aruco_bounds(self, frame):
         # TODO: Detect ArUco markers to establish workspace bounds
         # ---
-        # Detects ArUco markers to establish workspace bounds.
-        if frame is None or frame.size == 0:
-            return False
-
-        frame_contiguous = np.ascontiguousarray(frame, dtype=np.uint8)
-        try:
-            gray = cv2.cvtColor(frame_contiguous, cv2.COLOR_BGR2GRAY)
-            if self.use_new_aruco:
-                corners, ids, _ = self.detector.detectMarkers(gray)
-            else:
-                corners, ids, _ = cv2.aruco.detectMarkers(
-                    gray, self.aruco_dict, parameters=self.aruco_params
-                )
-
-            if ids is not None and len(corners) >= 2:
-                p1 = corners[0][0]
-                p2 = corners[1][0]
-                self.x1, self.y1 = int(p1[:, 0].mean()), int(p1[:, 1].mean())
-                self.x2, self.y2 = int(p2[:, 0].mean()), int(p2[:, 1].mean())
-                return True
-        except Exception:
-            pass
-        return False
+        # 
         # ---
 
     def transform_frame(self, frame):
         # TODO: Crop the workspace area inside the ArUco markers
         # ---
-        # Crops the workspace area inside the ArUco markers.
-        if frame is None or frame.size == 0:
-            return None
-
-        fx, fy = 1.5, 1.5
-        resized = cv2.resize(frame, (0, 0), fx=fx, fy=fy, interpolation=cv2.INTER_CUBIC)
-
-        if self.x1 != 0 and self.x2 != 0 and self.y1 != 0 and self.y2 != 0:
-            sx1, sx2 = int(self.x1 * fx), int(self.x2 * fx)
-            sy1, sy2 = int(self.y1 * fy), int(self.y2 * fy)
-
-            x_min, x_max = min(sx1, sx2), max(sx1, sx2)
-            y_min, y_max = min(sy1, sy2), max(sy1, sy2)
-
-            margin = 25
-            x_min, x_max = x_min + margin, x_max - margin
-            y_min, y_max = y_min + margin, y_max - margin
-
-            if y_max > y_min and x_max > x_min:
-                cropped = resized[y_min:y_max, x_min:x_max]
-                if cropped.size > 0:
-                    return cropped
-
-        return resized
+        # 
         # ---
 
     def yolo_detect(self, img):
@@ -203,18 +135,16 @@ class VisionPipeline:
 
         # TODO: Create blob from image for YOLOv5 input
         # ---
-        blob = cv2.dnn.blobFromImage(
-            img, 1.0 / 255.0, self.input_size, [0, 0, 0], swapRB=True, crop=False
-        )
+        # 
         # ---
-
+        
         self.net.setInput(blob)
 
         # TODO: Run forward pass through YOLOv5 network
         # ---
-        outputs = self.net.forward(self.net.getUnconnectedOutLayersNames())
+        # 
         # ---
-
+        
         predictions = outputs[0]
         if len(predictions.shape) == 3:
             predictions = predictions[0]
@@ -225,28 +155,14 @@ class VisionPipeline:
 
         # TODO: Parse YOLOv5 predictions into boxes, confidences, class IDs
         # ---
-        for row in predictions:
-            confidence = row[4]
-            if confidence > self.conf_thresh:
-                scores = row[5:]
-                class_id = np.argmax(scores)
-                if scores[class_id] > self.score_thresh:
-                    cx, cy, w, h = row[0], row[1], row[2], row[3]
-                    left = int((cx - w / 2.0) * x_factor)
-                    top = int((cy - h / 2.0) * y_factor)
-                    width = int(w * x_factor)
-                    height = int(h * y_factor)
-
-                    boxes.append([left, top, width, height])
-                    confidences.append(float(confidence))
-                    class_ids.append(class_id)
+        # 
         # ---
-
+        
         # TODO: Apply Non-Maximum Suppression to remove overlapping boxes
         # ---
-        indices = cv2.dnn.NMSBoxes(boxes, confidences, self.score_thresh, self.nms_thresh)
+        # 
         # ---
-
+        
         if len(indices) == 0:
             return img, "Searching..."
 
@@ -258,20 +174,9 @@ class VisionPipeline:
 
         # TODO: Draw detection boxes and labels on the frame
         # ---
-        for idx in indices:
-            left, top, width, height = boxes[idx]
-            cx, cy = left + width // 2, top + height // 2
-
-            class_name = self.classes[class_ids[idx]] if class_ids[idx] < len(self.classes) else str(class_ids[idx])
-            label = f"{class_name} {confidences[idx]:.2f}"
-            detected_names.append(label)
-
-            cv2.rectangle(annotated_img, (left, top), (left + width, top + height), (0, 255, 0), 2)
-            cv2.circle(annotated_img, (cx, cy), 4, (0, 0, 255), -1)
-            cv2.putText(annotated_img, label, (left, max(top - 5, 15)),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+        # 
         # ---
-
+        
         status_msg = f"Detected: {', '.join(detected_names)}"
         return annotated_img, status_msg
         # ---
@@ -279,17 +184,7 @@ class VisionPipeline:
 
 # TODO: Define function to find working camera index
 # ---
-def find_working_camera(max_tests=5):
-    """Scans video indices and returns the first camera that produces frames."""
-    for idx in range(max_tests):
-        cap = cv2.VideoCapture(idx, cv2.CAP_V4L2)
-        if cap.isOpened():
-            ret, frame = cap.read()
-            cap.release()
-            if ret and frame is not None and frame.size > 0:
-                print(f"Found active camera at index {idx}")
-                return idx
-    return None
+# 
 # ---
 
 
@@ -322,29 +217,28 @@ def main():
 
         # TODO: Update ArUco calibration coordinates
         # ---
-        vision.calculate_aruco_bounds(frame)
+        # 
         # ---
-
+        
         # TODO: Crop frame between ArUco markers
         # ---
-        cropped_frame = vision.transform_frame(frame)
+        # 
         # ---
-
+        
         # TODO: Perform YOLOv5 object detection on cropped frame
         # ---
-        display_frame, log_info = vision.yolo_detect(cropped_frame)
+        # 
         # ---
-
+        
         # Print metric diagnostics directly to terminal when an object is evaluated
         if "Searching" not in log_info and "No Frame" not in log_info:
             print(f"\r[YOLOv5] {log_info}", end="")
 
         # TODO: Display the processed frame
         # ---
-        if display_frame is not None and display_frame.size > 0:
-            cv2.imshow("YOLOv5 Object Detection", display_frame)
+        # 
         # ---
-
+        
         # Exit program on 'q' keypress
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
