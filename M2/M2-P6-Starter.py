@@ -12,6 +12,14 @@
 # 1. ROBOT INITIALIZATION
 # =====================================================================
 
+# The robot handle. None means "no arm", and every use of it below is
+# guarded, so the gesture game still runs on a machine with no robot.
+mc = None
+
+# Home pose. Used at startup and again at the end of every round, so it
+# lives at module level rather than inside the try block below.
+home_pos = [0, 0, 0, 0, 0, 0]
+
 try:
     # TODO: Initialize the arm, wait, and ensure the arm is on.
     # ---
@@ -27,8 +35,9 @@ try:
     # ---
 
 except Exception as e:
+    mc = None
     print(f"Robot hardware warning: {e}")
-    print("Continuing with OpenCV camera pipeline only...\n")
+    print("Continuing without the robot. Gestures are still detected and scored.\n")
 
 
 # ==========================================
@@ -54,6 +63,16 @@ robot_score = 0
 rounds_played = 0
 last_robot_move = None
 game_result = "Make a gesture!"
+
+# A gesture must be held this long before it counts as a round. Without
+# this, a single noisy frame triggers a 4.5 second arm movement.
+GESTURE_HOLD_TIME = 1.0  # seconds
+hold_gesture = None
+hold_start = 0.0
+
+# How long a verdict stays on screen before it is cleared
+RESULT_DISPLAY_TIME = 2.0  # seconds
+last_result_time = 0.0
 
 # Gesture labels
 GESTURES = ["Rock", "Paper", "Scissors"]
@@ -208,11 +227,25 @@ try:
                 # 
                 # ---
                 
-                # Check if valid gesture and cooldown passed
-                valid_gesture = player_gesture in GESTURES
-                cooldown_ready = (current_time - last_game_time) > GAME_COOLDOWN
+                # A valid gesture must be held steady before it counts
+                if player_gesture in GESTURES:
+                    if player_gesture != hold_gesture:
+                        hold_gesture = player_gesture
+                        hold_start = current_time
+                    held_for = current_time - hold_start
+                else:
+                    hold_gesture = None
+                    held_for = 0.0
+                
+                # Check if gesture is valid, held long enough, and cooldown passed
+                valid_gesture = (player_gesture in GESTURES
+                                 and held_for > GESTURE_HOLD_TIME)
+                cooldown_ready = (time.time() - last_game_time) > GAME_COOLDOWN
                 
                 if valid_gesture and cooldown_ready:
+                    # Require a fresh hold before the next round can start
+                    hold_gesture = None
+                    
                     # TODO: Get robot move and determine winner
                     # ---
                     # 
@@ -231,11 +264,19 @@ try:
                     # ---
                     
                     game_result = result
-                    last_game_time = current_time
+                    last_game_time = time.time()
                     
                     # Brief pause to show result
                     time.sleep(1.0)
-                    game_result = "Make a gesture!"
+                    
+                    # Stamp the start of the on-screen verdict. This has to
+                    # happen after the arm movement, which blocks the loop and
+                    # would otherwise consume the whole display window.
+                    last_result_time = time.time()
+        
+        # Clear the verdict only after it has been on screen long enough
+        if (time.time() - last_result_time) > RESULT_DISPLAY_TIME:
+            game_result = "Make a gesture!"
         
         # TODO: Draw game UI on frame
         # ---
@@ -260,7 +301,8 @@ try:
 finally:
     cap.release()
     cv2.destroyAllWindows()
-    mc.release_all_servos()
+    if mc is not None:
+        mc.release_all_servos()
     print("\nGame Over!")
     print(f"Final Score - Player: {player_score} | Robot: {robot_score}")
 # ---

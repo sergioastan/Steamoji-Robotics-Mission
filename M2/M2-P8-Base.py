@@ -80,8 +80,6 @@ except Exception as e:
     import traceback
     traceback.print_exc()
     POS_HOME_CARTESIAN = [66, -62, 235, 180, 0, 90]  # fallback
-set_pump(0)
-time.sleep(1.0)
 # ---
 
 # ==========================================
